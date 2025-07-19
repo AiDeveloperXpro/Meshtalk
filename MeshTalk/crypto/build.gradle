@@ -1,0 +1,17 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+}
+
+android {
+    namespace 'com.meshtalk.crypto'
+    compileSdk 34
+    defaultConfig {
+        minSdk 24
+        targetSdk 34
+    }
+}
+
+dependencies {
+    implementation "org.libsodium:sodium-jni:1.0.18"
+}

@@ -1,0 +1,20 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'kotlin-kapt'
+}
+
+android {
+    namespace 'com.meshtalk.data'
+    compileSdk 34
+    defaultConfig {
+        minSdk 24
+        targetSdk 34
+    }
+}
+
+dependencies {
+    implementation "androidx.room:room-runtime:2.6.0"
+    kapt "androidx.room:room-compiler:2.6.0"
+    implementation "androidx.room:room-ktx:2.6.0"
+}

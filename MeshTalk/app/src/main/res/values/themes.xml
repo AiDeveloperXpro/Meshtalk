@@ -1,0 +1,14 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.MeshTalk" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#075E54</item>
+        <item name="colorPrimaryVariant">#128C7E</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#25D366</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorBackground">#ECE5DD</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#000000</item>
+        <item name="android:statusBarColor">#075E54</item>
+        <item name="android:navigationBarColor">#075E54</item>
+    </style>
+</resources>
