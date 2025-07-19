@@ -10,14 +10,75 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.meshtalk.meshcore.MeshManager
+import com.meshtalk.meshcore.MeshMessage
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import android.content.Context
+
+// Singleton or DI for MeshManager (for demo)
+object MeshManagerProvider {
+    var meshManager: MeshManager? = null
+}
+
+class ChatViewModel(private val chatId: String, context: Context) : ViewModel() {
+    private val _messages = MutableStateFlow<List<Message>>(emptyList())
+    val messages: StateFlow<List<Message>> = _messages.asStateFlow()
+    private val myId = "Me" // TODO: Use real device/user ID
+    private val meshManager = MeshManagerProvider.meshManager ?: MeshManager(context, myId)
+
+    init {
+        MeshManagerProvider.meshManager = meshManager
+        meshManager.setOnMessageReceived { from, meshMsg ->
+            if (meshMsg.type == "text" && (meshMsg.to == null || meshMsg.to == myId)) {
+                viewModelScope.launch {
+                    _messages.value = _messages.value + Message(
+                        id = System.currentTimeMillis().toString(),
+                        sender = from,
+                        text = meshMsg.payload,
+                        isReceived = true
+                    )
+                }
+            }
+        }
+    }
+
+    fun sendMessage(text: String) {
+        val msg = MeshMessage(
+            from = myId,
+            to = chatId, // For demo, direct to chatId
+            timestamp = System.currentTimeMillis(),
+            type = "text",
+            payload = text
+        )
+        meshManager.broadcastMessage(msg)
+        viewModelScope.launch {
+            _messages.value = _messages.value + Message(
+                id = System.currentTimeMillis().toString(),
+                sender = myId,
+                text = text,
+                isReceived = false
+            )
+        }
+    }
+}
 
 @Composable
 fun ChatScreen(navController: NavController, chatId: String) {
-    // TODO: Replace with real messages
-    val messages = listOf(
-        Message("1", "Alice", "Hello!", true),
-        Message("2", "Me", "Hi Alice!", false)
-    )
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val viewModel: ChatViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            @Suppress("UNCHECKED_CAST")
+            return ChatViewModel(chatId, context.applicationContext) as T
+        }
+    })
+    val messages by viewModel.messages.collectAsState()
+    var input by remember { mutableStateOf("") }
     Column(modifier = Modifier.fillMaxSize()) {
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(messages.size) { i ->
@@ -40,7 +101,6 @@ fun ChatScreen(navController: NavController, chatId: String) {
                 }
             }
         }
-        var input by remember { mutableStateOf("") }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -53,7 +113,12 @@ fun ChatScreen(navController: NavController, chatId: String) {
                 modifier = Modifier.weight(1f),
                 placeholder = { Text("Type a message") }
             )
-            IconButton(onClick = { /* TODO: Send message */ }) {
+            IconButton(onClick = {
+                if (input.isNotBlank()) {
+                    viewModel.sendMessage(input)
+                    input = ""
+                }
+            }) {
                 Icon(Icons.Default.Send, contentDescription = "Send")
             }
         }
